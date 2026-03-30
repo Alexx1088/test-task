@@ -62,6 +62,48 @@
 
 ## Concurrency Bugs
 
-## Transaction Integrity Bugs
+## Issue 8: Data race on shared error variable
+- File: usecases/bulk_complete/interactor.go
+- Line: writes to `lastErr` inside goroutines
+- Severity: CRITICAL
+- Problem: Multiple goroutines write to the shared `lastErr` variable without synchronization.
+- Impact: This causes a data race. In production, it can return nondeterministic errors, overwrite failures, or even produce corrupted interface values under concurrent writes.
+- Fix: Protect shared state with synchronization or collect errors safely through mutex-protected aggregation, channels, or errgroup patterns.
 
 ## Other Issues
+
+## Issue 9: Unbounded concurrency
+- File: usecases/bulk_complete/interactor.go
+- Line: one goroutine started per order
+- Severity: WARNING
+- Problem: The code starts one goroutine per order without any concurrency limit.
+- Impact: A large batch can overload the database, exhaust connection pools, and increase memory usage.
+- Fix: Use a semaphore or worker pool to limit concurrency.
+
+## Issue 10: Loss of error information in bulk processing
+- File: usecases/bulk_complete/interactor.go
+- Line: `return lastErr`
+- Severity: WARNING
+- Problem: Only a single error is returned even if multiple operations fail.
+- Impact: This hides the full failure picture and makes debugging harder.
+- Fix: Aggregate all errors and return them in a structured way.
+
+## Transaction Integrity Bugs
+
+## Issue 11: Order update and audit log creation are not atomic
+- File: usecases/transfer_order/interactor.go
+- Line: `Update(...)` followed by `CreateAuditLog(...)`
+- Severity: CRITICAL
+- Problem: The order transfer and audit log creation are performed as two separate operations without a transaction.
+- Impact: If the order update succeeds but audit log creation fails, the database is left in an inconsistent state: the order is transferred but the audit trail is missing.
+- Fix: Execute both operations atomically in a single transaction.
+
+## Architecture Violations
+
+## Issue 12: Usecase directly mutates aggregate fields
+- File: usecases/transfer_order/interactor.go
+- Line: `order.CustomerID = newCustomerID`
+- Severity: WARNING
+- Problem: The usecase modifies aggregate fields directly instead of using domain behavior.
+- Impact: This bypasses domain invariants and makes business rules harder to enforce consistently.
+- Fix: Introduce a domain method such as `TransferTo(newCustomerID string) error`.
