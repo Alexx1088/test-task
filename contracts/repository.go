@@ -3,7 +3,7 @@ package contracts
 import (
 	"context"
 
-	"github.com/alex/test-task/test-task/domain"
+	"github.com/Alexx1088/test-task/domain"
 )
 
 type OrderRepository interface {
