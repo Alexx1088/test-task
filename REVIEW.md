@@ -44,6 +44,22 @@
 - Impact: This may cause incorrect totals or rounding issues in financial calculations.
 - Fix: Store money in minor units like `int64` (for example, cents) or use a decimal type.
 
+## Issue 6: Usecase depends on concrete repository implementation
+- File: usecases/complete_order/interactor.go
+- Line: Interactor struct field `repo *repo.OrderRepo`
+- Severity: CRITICAL
+- Problem: The usecase depends on a concrete repository implementation instead of an interface.
+- Impact: This breaks dependency inversion and makes testing and maintenance harder.
+- Fix: Depend on a repository contract interface from the contracts layer.
+
+## Issue 7: Usecase leaks infrastructure through DB access
+- File: usecases/complete_order/interactor.go
+- Line: `order.Complete(ctx, uc.repo.DB())`
+- Severity: CRITICAL
+- Problem: The usecase passes a database handle into the domain method.
+- Impact: This leaks infrastructure concerns across architectural boundaries.
+- Fix: Let the domain mutate state only, and persist changes through repository methods.
+
 ## Concurrency Bugs
 
 ## Transaction Integrity Bugs
